@@ -1,0 +1,16 @@
+[package]
+name = "example-app"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[net]
+git-fetch-with-cli = true
+
+[dependencies]
+example-api = { git = "ssh://git@github.com/Cube-OS/example-api.git"}
+command-id = { git = "ssh://git@github.com/Cube-OS/command-id.git"}
+bincode = { git = "ssh://git@github.com/Cube-OS/bincode.git"}
+cubeos-service = { git = "ssh://git@github.com/Cube-OS/cubeos-service.git"}
+serde = "1.0"
+serde_with = "1.13.0"
