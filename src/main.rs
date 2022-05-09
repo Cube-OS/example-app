@@ -14,17 +14,16 @@ command_id!{
 }
 
 fn main() -> Result<(),CubeOSError>{
-    let socket = UdpSocket::bind("0.0.0.0:9029")?;
+    let socket = UdpSocket::bind("127.0.0.1:9029")?;
 
-    // let cmd_id: u16 = u16::try_from(CommandID::Ping)?;
-    // let msg: Vec<u8> = cmd_id.to_be_bytes().to_vec();
-    let mut msg: Vec<u8> = Command::<CommandID,Generic>::serialize(CommandID::Ping,Generic::new())?;
-
+    let mut msg: Vec<u8> = Command::<CommandID,()>::serialize(CommandID::Ping,())?;
+    
     println!("{:?}",msg);
 
-    let mut buf = [0u8,5];
-    socket.connect("0.0.0.0:8029");
-    match socket.send(&msg) {
+    let mut buf = [0u8; 255];
+    // socket.connect("0.0.0.0:8029");
+    match socket.send_to(&msg,"127.0.0.1:8029")
+    {
         Ok(_) => {
             match socket.recv(&mut buf) {
                 Ok(m) => println!("{:?}", &buf[..m]),
@@ -41,7 +40,6 @@ fn main() -> Result<(),CubeOSError>{
 
     println!("{:?}",msg);
 
-    let mut buf = [0u8,5];
     socket.connect("0.0.0.0:8029");
     match socket.send(&msg) {
         Ok(_) => {
@@ -68,7 +66,24 @@ fn main() -> Result<(),CubeOSError>{
 
     println!("{:?}",msg);
 
-    let mut buf = [0u8,5];
+    socket.connect("0.0.0.0:8029");
+    match socket.send(&msg) {
+        Ok(_) => {
+            match socket.recv(&mut buf) {
+                Ok(m) => println!("{:?}", &buf[..m]),
+                Err(_) => println!("Error"),
+            }
+        }
+        Err(_) => println!("Error"),
+    }
+
+    msg.clear();
+    let get = ExampleEnum::All;
+
+    msg = Command::<CommandID,ExampleEnum>::serialize(CommandID::Get,get)?;
+
+    println!("{:?}",msg);
+
     socket.connect("0.0.0.0:8029");
     match socket.send(&msg) {
         Ok(_) => {
