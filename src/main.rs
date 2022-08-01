@@ -1,57 +1,67 @@
 use example_api::*;
 use command_id::*;
-use std::net::UdpSocket;
-use std::time::Duration;
-use std::thread;
-use bincode::{serialize,deserialize};
-use cubeos_service::{Command,Generic};
+use rust_udp::*;
+use cubeos_service::Command;
 // use std::convert::TryFrom;
 
+// CommandID Enum from Service can not be imported here, 
+// copy-paste list of commands from service into this CommandID macro,
+// to create a copy that can be used in the App
 command_id!{
     Ping,
     Get,
     Set,
 }
 
+// This example App 
+// - pings the Example Service
+// - performs a Telemetry request
+// - overwrites variable of the service
+// - performs a second Telemetry request to check the overwritten data
 fn main() -> Result<(),CubeOSError>{
-    let socket = UdpSocket::bind("127.0.0.1:9029")?;
 
-    let mut msg: Vec<u8> = Command::<CommandID,()>::serialize(CommandID::Ping,())?;
+    // App IP + Service IP
+    let app_host = "127.0.0.1:9029".to_string();
+    let service = "127.0.0.1:8029".to_string();
+
+    // The App opens a UDP Connection by binding the app_host IP
+    // This connection can then be used to transfer commands
+    let connection = Connection::from_path(app_host,service);
+
+    // Create a command
+    // 
+    // Arguments:
+    // `CommandID` -> command called
+    // `Input` -> Input for Command, here ()
+    let msg = Command::<CommandID,()>::serialize(CommandID::Ping,())?;
     
     println!("{:?}",msg);
 
-    let mut buf = [0u8; 255];
-    // socket.connect("0.0.0.0:8029");
-    match socket.send_to(&msg,"127.0.0.1:8029")
-    {
-        Ok(_) => {
-            match socket.recv(&mut buf) {
-                Ok(m) => println!("{:?}", &buf[..m]),
-                Err(_) => println!("Error"),
-            }
-        }
+    match connection.transfer(msg,1) {
+        Ok(r) => println!("{:?}",r),
         Err(_) => println!("Error"),
     }
 
-    msg.clear();
+    // Create a command
+    // 
+    // Arguments:
+    // `CommandID` -> command called
+    // `Input` -> Input for Command, here ExampleEnum
     let get = ExampleEnum::All;
-
-    msg = Command::<CommandID,ExampleEnum>::serialize(CommandID::Get,get)?;
+    let msg = Command::<CommandID,ExampleEnum>::serialize(CommandID::Get,get)?;
 
     println!("{:?}",msg);
 
-    socket.connect("0.0.0.0:8029");
-    match socket.send(&msg) {
-        Ok(_) => {
-            match socket.recv(&mut buf) {
-                Ok(m) => println!("{:?}", &buf[..m]),
-                Err(_) => println!("Error"),
-            }
-        }
+    match connection.transfer(msg,20) {
+        Ok(r) => println!("{:?}", r),
         Err(_) => println!("Error"),
     }
 
-    msg.clear();
+    // Create a command
+    // 
+    // Arguments:
+    // `CommandID` -> command called
+    // `Input` -> Input for Command, here ExampleInput
     let sub = ExampleInput{
         in_no: 10,
         in_no1: 256,
@@ -61,37 +71,28 @@ fn main() -> Result<(),CubeOSError>{
     };
     let choice = ExampleEnum::Zero;
     let set = (sub,choice);
-
-    msg = Command::<CommandID,(ExampleInput,ExampleEnum)>::serialize(CommandID::Set,set)?;
+    let msg = Command::<CommandID,(ExampleInput,ExampleEnum)>::serialize(CommandID::Set,set)?;
 
     println!("{:?}",msg);
 
-    socket.connect("0.0.0.0:8029");
-    match socket.send(&msg) {
-        Ok(_) => {
-            match socket.recv(&mut buf) {
-                Ok(m) => println!("{:?}", &buf[..m]),
-                Err(_) => println!("Error"),
-            }
-        }
+    match connection.transfer(msg,1) {
+        Ok(r) => println!("{:?}", r),
         Err(_) => println!("Error"),
     }
 
-    msg.clear();
+    // Create a command
+    // 
+    // Arguments:
+    // `CommandID` -> command called
+    // `Input` -> Input for Command, here ExampleEnum
     let get = ExampleEnum::All;
 
-    msg = Command::<CommandID,ExampleEnum>::serialize(CommandID::Get,get)?;
+    let msg = Command::<CommandID,ExampleEnum>::serialize(CommandID::Get,get)?;
 
     println!("{:?}",msg);
 
-    socket.connect("0.0.0.0:8029");
-    match socket.send(&msg) {
-        Ok(_) => {
-            match socket.recv(&mut buf) {
-                Ok(m) => println!("{:?}", &buf[..m]),
-                Err(_) => println!("Error"),
-            }
-        }
+    match connection.transfer(msg,20) {
+        Ok(r) => println!("{:?}", r),
         Err(_) => println!("Error"),
     }
 

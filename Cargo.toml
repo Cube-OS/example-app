@@ -12,5 +12,6 @@ example-api = { git = "ssh://git@github.com/Cube-OS/example-api.git"}
 command-id = { git = "ssh://git@github.com/Cube-OS/command-id.git"}
 bincode = { git = "ssh://git@github.com/Cube-OS/bincode.git"}
 cubeos-service = { git = "ssh://git@github.com/Cube-OS/cubeos-service.git"}
+rust-udp = { git = "ssh://git@github.com/Cube-OS/rust-udp.git"}
 serde = "1.0"
 serde_with = "1.13.0"
