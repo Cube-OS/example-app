@@ -36,7 +36,22 @@ fn main() -> Result<(),CubeOSError>{
     let msg = Command::<CommandID,()>::serialize(CommandID::Ping,())?;
     
     println!("{:?}",msg);
-
+    
+    // Send command to Service and wait for reply
+    //      
+    // connection.transfer(command: Vec<u8>, rx_len: usize) -> Result<Vec<u8>>
+    //
+    // # Arguments:
+    // command: Vec<u8> - Serialized Command to send to the service/payload
+    // rx_len: usize - Length of read buffer/expected length of reply
+    // 
+    // # Output:
+    // cubeos_error::Result<Vec<u8>>
+    //
+    // Output can be deserialized to any API struct or enum with
+    // bincode::deserialize<E>(output)
+    // where E is a struct or enum defined in the API
+    //
     match connection.transfer(msg,1) {
         Ok(r) => println!("{:?}",r),
         Err(_) => println!("Error"),
