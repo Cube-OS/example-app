@@ -1,116 +1,47 @@
 use example_api::*;
-use command_id::*;
-use rust_udp::*;
-use cubeos_service::Command;
-// use std::convert::TryFrom;
+use cubeos_service::*;
 
-// CommandID Enum from Service can not be imported here, 
-// copy-paste list of commands from service into this CommandID macro,
-// to create a copy that can be used in the App
-command_id!{
-    //Keep these command IDs reserved, these commands are implemented in the CubeOS service
-    Ping,
-    Get,
-    Set,
-    //Add your commands here
+app_macro!{
+    example_service: Example{
+        query: Get => fn get_values(&self, get: ExampleEnum) -> Result<ExampleOutput>; out: ExampleOutput;
+        mutation: Set => fn set_values(&self, in_no: u16, in_n01: u32, in_no2: u16, in_str: String, in_bool: bool, choice: ExampleEnum) -> Result<()>;
+    }
 }
 
-// This example App 
-// - pings the Example Service
+// This example App shows how to use the App macro to communicate with a service.
+// If the Payload is connected to the computer the App is run on it is possible to use the API directly,
+// but it is recommended to use the app_macro! as this allows for the communication with multiple Payloads.
+// This also makes sure that any variable changes are saved to the Payload Service and logging is enabled.
 // - performs a Telemetry request
 // - overwrites variable of the service
 // - performs a second Telemetry request to check the overwritten data
-fn main() -> Result<(),CubeOSError>{
+fn main() -> Result<()>{
 
-    // App IP + Service IP
-    let app_host = "127.0.0.1:9029".to_string();
-    let service = "127.0.0.1:8029".to_string();
+    // Example get
+    // This calls the get_values function of the service and returns the requested data.
+    let get_values = Example::get_values(ExampleEnum::All).unwrap();
 
-    // The App opens a UDP Connection by binding the app_host IP
-    // This connection can then be used to transfer commands
-    let connection = Connection::from_path(app_host,service);
+    // println!("{:?}", get_values);
 
-    // Create a command
-    // 
-    // Arguments:
-    // `CommandID` -> command called
-    // `Input` -> Input for Command, here ()
-    let msg = Command::<CommandID,()>::serialize(CommandID::Ping,())?;
+    // Example set
+    // This calls the set_values function of the service and overwrites the data.
+    // The set function returns a Result<()> which is Ok(()) if the function was successful.
+    // If the function was not successful it returns an ExampleError.
+    let in_no = 1;
+    let in_no1 = 2;
+    let in_no2 = 3;
+    let in_str = "test".to_string();
+    let in_bool = true;
+    let choice = ExampleEnum::One;
+    Example::set_values(in_no, in_no1, in_no2, in_str, in_bool, choice)?;
     
-    println!("{:?}",msg);
-    
-    // Send command to Service and wait for reply
-    //      
-    // connection.transfer(command: Vec<u8>, rx_len: usize) -> Result<Vec<u8>>
-    //
-    // # Arguments:
-    // command: Vec<u8> - Serialized Command to send to the service/payload
-    // rx_len: usize - Length of read buffer/expected length of reply
-    // 
-    // # Output:
-    // cubeos_error::Result<Vec<u8>>
-    //
-    // Output can be deserialized to any API struct or enum with
-    // bincode::deserialize<E>(output)
-    // where E is a struct or enum defined in the API
-    //
-    match connection.transfer(msg,1) {
-        Ok(r) => println!("{:?}",r),
-        Err(_) => println!("Error"),
-    }
+    // Check that data has been overwritten
+    let get_values_2 = Example::get_values(ExampleEnum::One).unwrap();
 
-    // Create a command
-    // 
-    // Arguments:
-    // `CommandID` -> command called
-    // `Input` -> Input for Command, here ExampleEnum
-    let get = ExampleEnum::All;
-    let msg = Command::<CommandID,ExampleEnum>::serialize(CommandID::Get,get)?;
-
-    println!("{:?}",msg);
-
-    match connection.transfer(msg,20) {
-        Ok(r) => println!("{:?}", r),
-        Err(_) => println!("Error"),
-    }
-
-    // Create a command
-    // 
-    // Arguments:
-    // `CommandID` -> command called
-    // `Input` -> Input for Command, here ExampleInput
-    let sub = ExampleInput{
-        in_no: 10,
-        in_no1: 256,
-        in_no2: 0,
-        in_str: "example".to_string(),
-        in_bool: true,
-    };
-    let choice = ExampleEnum::Zero;
-    let set = (sub,choice);
-    let msg = Command::<CommandID,(ExampleInput,ExampleEnum)>::serialize(CommandID::Set,set)?;
-
-    println!("{:?}",msg);
-
-    match connection.transfer(msg,1) {
-        Ok(r) => println!("{:?}", r),
-        Err(_) => println!("Error"),
-    }
-
-    // Create a command
-    // 
-    // Arguments:
-    // `CommandID` -> command called
-    // `Input` -> Input for Command, here ExampleEnum
-    let get = ExampleEnum::All;
-
-    let msg = Command::<CommandID,ExampleEnum>::serialize(CommandID::Get,get)?;
-
-    println!("{:?}",msg);
-
-    match connection.transfer(msg,20) {
-        Ok(r) => println!("{:?}", r),
-        Err(_) => println!("Error"),
+    if get_values_2.out_no == [1u16] && get_values_2.out_str == "test" && get_values_2.out_bool == [true] {
+        println!("Data has been overwritten");
+    } else {
+        println!("Data has not been overwritten");
     }
 
     Ok(())
