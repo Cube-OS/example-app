@@ -1,5 +1,7 @@
 use example_api::*;
 use cubeos_service::*;
+use sysfs_gpio::{Direction, Pin};
+use std::process::Command as ProcessCommand;
 
 app_macro!{
     example_service: Example{
@@ -16,6 +18,23 @@ app_macro!{
 // - overwrites variable of the service
 // - performs a second Telemetry request to check the overwritten data
 fn main() -> Result<()>{
+
+    // Initialize the logger
+    Logger::init();
+
+    // Start Payload via GPIO
+    let pin = Pin::new(4);
+
+    pin.with_exported(|| {
+        pin.set_direction(Direction::Out)?;
+        pin.set_value(1)?;
+        Ok(())
+    })?;
+
+    // Initialize the service
+    let mut child = ProcessCommand::new("/home/kubos/example-service")
+        .spawn()
+        .expect("Failed to start the process");
 
     // Example get
     // This calls the get_values function of the service and returns the requested data.
@@ -44,5 +63,15 @@ fn main() -> Result<()>{
         println!("Data has not been overwritten");
     }
 
+    // Stop the service
+    let _ = child.kill();
+
+    // Shutdown the Payload
+    pin.with_exported(|| {
+        pin.set_direction(Direction::Out)?;
+        pin.set_value(0)?;
+        Ok(())
+    })?;
+    
     Ok(())
 }

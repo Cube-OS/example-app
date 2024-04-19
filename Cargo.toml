@@ -8,3 +8,4 @@ example-api = { git = "ssh://git@github.com/Cube-OS/example-api.git"}
 bincode = { git = "ssh://git@github.com/Cube-OS/bincode.git"}
 cubeos-service = { git = "ssh://git@github.com/Cube-OS/cubeos-service.git", features = ["app"] }
 serde = { version = "1.0", features = ["derive"] }
+sysfs-gpio = { version = "0.6" }
